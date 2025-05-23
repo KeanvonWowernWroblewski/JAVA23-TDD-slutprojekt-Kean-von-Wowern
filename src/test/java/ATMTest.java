@@ -5,6 +5,7 @@ import org.example.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -115,9 +116,16 @@ public class ATMTest {
         when(bankMock.getFailedPinAttempts("8888")).thenReturn(0);
         when(bankMock.validatePin("8888", "1111")).thenReturn(true);
 
+        doAnswer(invocation -> {
+            double amount = invocation.getArgument(1);
+            user.setBalance(user.getBalance() + amount);
+            return null;
+        }).when(bankMock).deposit(eq("8888"), anyDouble());
+
         atm.run();
 
         verify(bankMock).deposit("8888", 500.0);
+        assertEquals(500.0, user.getBalance(), 0.001);
     }
 
     @Test
@@ -132,8 +140,15 @@ public class ATMTest {
         when(bankMock.validatePin("7777", "1234")).thenReturn(true);
         when(bankMock.getBalance("7777")).thenReturn(1000.0);
 
+        doAnswer(invocation -> {
+            double amount = invocation.getArgument(1);
+            user.setBalance(user.getBalance() - amount);
+            return null;
+        }).when(bankMock).withdraw(eq("7777"), anyDouble());
+
         atm.run();
 
         verify(bankMock).withdraw("7777", 100.0);
+        assertEquals(900.0, user.getBalance(), 0.001);
     }
 }
